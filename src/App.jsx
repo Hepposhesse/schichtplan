@@ -95,6 +95,7 @@ function App() {
 
       const formattedSlots = (data || []).map(slot => ({
         ...slot,
+        date: slot.date?.slice(0, 10),
         bookings: (bookingsData || []).filter(b => b.slot_id === slot.id).map(b => ({
           ...b,
           name: usersMap[b.user_id] || "Unbekannt"
@@ -478,7 +479,8 @@ function App() {
 
   const scopedAllSlots = viewMode === "day"
     ? timeFilteredSlots.filter(slot => {
-        return slot.date?.slice(0, 10) === currentDate;
+        console.log("CHECK DATE:", slot.date, currentDate);
+        return slot.date === currentDate;
       })
     : timeFilteredSlots;
 
