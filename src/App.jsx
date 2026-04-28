@@ -399,8 +399,7 @@ function App() {
           end_time: endTime,
           date: date,
           capacity: capacity,
-          role: role,
-          compensation: compensation
+          role: role
         }
       ]);
 
