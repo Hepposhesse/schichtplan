@@ -92,7 +92,7 @@ body {
   border: 1px solid var(--primary-color);
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  z-index: 10;
+  z-index: 110;
   max-height: 300px;
   overflow-y: auto;
   backdrop-filter: blur(10px);
@@ -752,6 +752,12 @@ body {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  position: relative;
+  z-index: 100;
+  overflow: visible;
+}
+.modal-content .custom-select-backdrop {
+  display: none;
 }
 .modal-content h3 {
   margin: 0;
