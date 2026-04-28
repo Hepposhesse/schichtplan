@@ -92,10 +92,9 @@ body {
   border: 1px solid var(--primary-color);
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-  z-index: 110;
+  z-index: 15;
   max-height: 300px;
   overflow-y: auto;
-  backdrop-filter: blur(10px);
 }
 .custom-user-select-option {
   padding: 0.8rem 1rem;
@@ -139,6 +138,8 @@ body {
   flex: 1;
   overflow-y: auto;
   scrollbar-width: none;
+  position: relative;
+  z-index: 1;
 }
 
 .app-wrapper::-webkit-scrollbar {
@@ -150,6 +151,8 @@ body {
   max-width: 900px;
   margin: 0 auto;
   box-sizing: border-box;
+  position: relative;
+  z-index: 5;
 }
 
 .employee-select-wrapper {
@@ -553,6 +556,8 @@ body {
   box-shadow: var(--shadow-sm);
   cursor: pointer;
   transition: var(--transition);
+  position: relative;
+  z-index: 2;
 }
 .stat-card:hover {
   background: var(--bg-surface-hover);
@@ -715,7 +720,8 @@ body {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-  animation: fadeInUp 0.3s ease-out;
+  position: relative;
+  z-index: 100;
 }
 
 @media (max-width: 600px) {
@@ -748,13 +754,11 @@ body {
   width: 90%;
   max-width: 450px;
   box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-  animation: fadeInUp 0.3s ease-out;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
   position: relative;
-  z-index: 100;
-  overflow: visible;
+  z-index: 1;
 }
 .modal-content .custom-select-backdrop {
   display: none;
