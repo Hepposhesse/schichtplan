@@ -390,6 +390,31 @@ function App() {
     }
   };
 
+  const handleAddSlot = async (date, startTime, endTime, capacity, role, compensation) => {
+    const { data, error } = await supabase
+      .from("slots")
+      .insert([
+        {
+          start_time: startTime,
+          end_time: endTime,
+          date: date,
+          capacity: capacity,
+          role: role,
+          compensation: compensation
+        }
+      ]);
+
+    if (error) {
+      console.error(error);
+      alert("Fehler beim Erstellen des Slots");
+      return;
+    }
+
+    console.log("Inserted:", data);
+    await fetchSlots();
+    setShowCreateModal(false); // Optional: close modal if successful
+  };
+
   const handleBatchDelete = async () => {
     if (window.confirm(`Möchtest du ${globalSelection.length} Slots wirklich löschen?`)) {
       const { error } = await supabase.from("slots").delete().in("id", globalSelection);
@@ -916,7 +941,7 @@ function App() {
               </button>
             </div>
             <div className="modal-body">
-              <AdminForm onAdd={addSlot} conflictError={false} currentDate={currentDate} />
+              <AdminForm onAdd={handleAddSlot} conflictError={false} currentDate={currentDate} />
             </div>
           </div>
         </div>
