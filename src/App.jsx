@@ -389,23 +389,35 @@ function App() {
   };
 
   const handleAddSlot = async (date, startTime, endTime, capacity, role, compensation) => {
+    const slotsToInsert = [];
+
+    let current = new Date(`${date}T${startTime}`);
+    const endDate = new Date(`${date}T${endTime}`);
+
+    while (current < endDate) {
+      const next = new Date(current);
+      next.setHours(current.getHours() + 1);
+
+      slotsToInsert.push({
+        date: date,
+        start_time: current.toTimeString().slice(0, 5),
+        end_time: next.toTimeString().slice(0, 5),
+        capacity: capacity,
+        role: role,
+        compensation: compensation
+      });
+
+      current = next;
+    }
+
     const { data, error } = await supabase
       .from("slots")
-      .insert([
-        {
-          start_time: startTime,
-          end_time: endTime,
-          date: date,
-          capacity: capacity,
-          role: role,
-          compensation: compensation
-        }
-      ])
+      .insert(slotsToInsert)
       .select();
 
     if (error) {
       console.error("REAL INSERT ERROR:", error);
-      alert(error.message || "Fehler beim Erstellen des Slots");
+      alert(error.message || "Fehler beim Erstellen der Slots");
       return;
     }
 
