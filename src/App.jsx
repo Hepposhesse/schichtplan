@@ -480,10 +480,19 @@ function App() {
     return slotTime >= cleanNow;
   });
 
+  const selectedDate = currentDate?.slice(0, 10);
+
+  console.log("FILTER DEBUG:", {
+    selectedDate,
+    slotDates: timeFilteredSlots.map(s => s.date)
+  });
+
   const scopedAllSlots = viewMode === "day"
     ? timeFilteredSlots.filter(slot => {
-        console.log("CHECK DATE:", slot.date, currentDate);
-        return slot.date === currentDate;
+        if (!slot.date) return false;
+
+        const slotDate = String(slot.date).slice(0, 10);
+        return slotDate === selectedDate;
       })
     : timeFilteredSlots;
 
