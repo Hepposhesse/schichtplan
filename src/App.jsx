@@ -493,6 +493,7 @@ function App() {
     return passesFilter;
   });
 
+  const now = new Date();
   const todayStr = formatDate(now);
   const currentHours = now.getHours();
   const currentMinutes = now.getMinutes();
