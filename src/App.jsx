@@ -469,22 +469,26 @@ function App() {
   });
 
   const now = new Date();
+  const showPast = showPastSlots;
+
+  const filteredSlots = sortedSlots.filter(slot => {
+    if (!slot.date || !slot.start_time) return false;
+
+    const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
+    const isPast = slotDateTime < now;
+
+    // Toggle controls visibility
+    if (!showPast && isPast) return false;
+
+    return true;
+  });
 
   const scopedAllSlots = viewMode === "day"
-    ? sortedSlots.filter(slot => {
-        if (!slot.date || !slot.start_time) return false;
-
-        // Build full datetime from slot
-        const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
-
-        // Only allow future slots
-        if (slotDateTime < now) return false;
-
-        // Then apply date filter
+    ? filteredSlots.filter(slot => {
         const slotDate = String(slot.date).slice(0, 10);
         return slotDate === selectedDate;
       })
-    : sortedSlots;
+    : filteredSlots;
 
   const daySlots = scopedAllSlots.filter(slot => {
     const isBooked = selectedUserId ? slot.bookings?.some(b => b.user_id === selectedUserId) : false;

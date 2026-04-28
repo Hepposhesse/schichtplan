@@ -1,23 +1,32 @@
 import React from 'react';
 
 export function Dashboard({ scopedSlots, filter, setFilter, isAdmin, selectedUserId }) {
-  const open = (scopedSlots || []).filter(slot => {
-    if (isAdmin && slot.isPastSlot) return false;
+  const now = new Date();
+
+  // ONLY count future slots for actionable stats
+  const futureSlots = (scopedSlots || []).filter(slot => {
+    if (!slot.date || !slot.start_time) return false;
+    const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
+    return slotDateTime >= now;
+  });
+
+  const open = futureSlots.filter(slot => {
     const caps = slot.capacity || 0;
     const booked = slot.bookings?.length || 0;
     return (caps - booked > 0) && (!selectedUserId || !slot.bookings?.some(b => b.user_id === selectedUserId));
   }).length;
 
-  const mine = (scopedSlots || []).filter(slot => {
+  const mine = futureSlots.filter(slot => {
     return selectedUserId ? slot.bookings?.some(b => b.user_id === selectedUserId) : false;
   }).length;
   
-  const pastCount = (scopedSlots || []).filter(slot => slot.isPastSlot).length;
+  const pastCount = (scopedSlots || []).filter(slot => {
+    if (!slot.date || !slot.start_time) return false;
+    const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
+    return slotDateTime < now;
+  }).length;
 
-  const critical = (scopedSlots || []).filter(slot => {
-    if (isAdmin && slot.isPastSlot) {
-      return slot.isCritical === true; 
-    }
+  const critical = futureSlots.filter(slot => {
     const caps = slot.capacity || 0;
     const booked = slot.bookings?.length || 0;
     const isBookedByMe = selectedUserId ? slot.bookings?.some(b => b.user_id === selectedUserId) : false;
