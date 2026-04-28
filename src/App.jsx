@@ -405,8 +405,8 @@ function App() {
       ]);
 
     if (error) {
-      console.error(error);
-      alert("Fehler beim Erstellen des Slots");
+      console.error("INSERT ERROR:", error);
+      alert("Fehler beim Erstellen");
       return;
     }
 
