@@ -392,15 +392,6 @@ function App() {
   };
 
   const handleAddSlot = async (date, startTime, endTime, capacity, role, compensation) => {
-    console.log("INSERT PAYLOAD:", {
-      start_time: startTime,
-      end_time: endTime,
-      date: date,
-      capacity: capacity,
-      role: role,
-      compensation: compensation
-    });
-
     const { data, error } = await supabase
       .from("slots")
       .insert([
@@ -417,7 +408,7 @@ function App() {
 
     if (error) {
       console.error("INSERT ERROR:", error);
-      alert("Fehler beim Erstellen");
+      alert("Fehler beim Erstellen des Slots");
       return;
     }
 
