@@ -407,14 +407,15 @@ function App() {
       .select();
 
     if (error) {
-      console.error("INSERT ERROR:", error);
-      alert("Fehler beim Erstellen des Slots");
+      console.error("REAL INSERT ERROR:", error);
+      alert(error.message || "Fehler beim Erstellen des Slots");
       return;
     }
 
-    console.log("Inserted:", data);
+    console.log("SLOT CREATE SUCCESS - no error:", error, data);
     await fetchSlots();
-    setShowCreateModal(false); // Optional: close modal if successful
+    setShowCreateModal(false);
+    return { success: true };
   };
 
   const handleBatchDelete = async () => {

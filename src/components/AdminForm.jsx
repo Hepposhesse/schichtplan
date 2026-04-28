@@ -25,14 +25,12 @@ export function AdminForm({ onAdd, conflictError, currentDate }) {
 
     setIsSubmitting(false);
 
-    if (result?.success) {
+    if (result && result.success) {
       setSuccessMessage("Slots erfolgreich erstellt");
       
       setTimeout(() => {
         setSuccessMessage("");
       }, 3000);
-    } else {
-      alert("Fehler beim Erstellen");
     }
   };
 
