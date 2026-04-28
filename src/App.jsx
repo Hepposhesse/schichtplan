@@ -459,42 +459,23 @@ function App() {
     return (aH * 60 + aM) - (bH * 60 + bM);
   });
 
-  const now = new Date();
-
-  // 👉 auf Minute runden
-  const cleanNow = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    now.getHours(),
-    now.getMinutes()
-  );
-
-  const timeFilteredSlots = sortedSlots.filter(slot => {
-    if (showPastSlots) return true;
-
-    const [h, m] = (slot.start_time || "00:00").split(":").map(Number);
-    const [y, mo, d] = (slot.date || "1970-01-01").split("-").map(Number);
-    const slotTime = new Date(y, mo - 1, d, h, m);
-
-    return slotTime >= cleanNow;
-  });
+  console.log("SLOTS BEFORE FILTER:", slots);
 
   const selectedDate = currentDate?.slice(0, 10);
 
   console.log("FILTER DEBUG:", {
     selectedDate,
-    slotDates: timeFilteredSlots.map(s => s.date)
+    slotDates: sortedSlots.map(s => s.date)
   });
 
   const scopedAllSlots = viewMode === "day"
-    ? timeFilteredSlots.filter(slot => {
+    ? sortedSlots.filter(slot => {
         if (!slot.date) return false;
 
         const slotDate = String(slot.date).slice(0, 10);
         return slotDate === selectedDate;
       })
-    : timeFilteredSlots;
+    : sortedSlots;
 
   const daySlots = scopedAllSlots.filter(slot => {
     const isBooked = selectedUserId ? slot.bookings?.some(b => b.user_id === selectedUserId) : false;
