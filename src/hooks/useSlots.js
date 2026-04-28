@@ -297,59 +297,44 @@ export function useSlots() {
     const organization_id = "00000000-0000-0000-0000-000000000001";
     const newSlotId = uuidv4();
 
-    const slotData = {
-      id: newSlotId,
-      organization_id: organization_id,
+    const payload = {
       date: date || "",
       start_time: startTime,
       end_time: endTime,
       capacity: Number(capacity) || 1,
-      is_critical: false,
       role: role,
-      compensation: compensation
+      compensation: compensation,
+      is_critical: false
     };
 
     try {
-      console.log("SAVING SLOT:", { role, compensation });
-      const { data, error } = await supabase.from("slots").insert([{
-        id: slotData.id,
-        organization_id: slotData.organization_id,
-        date: slotData.date,
-        start_time: slotData.start_time,
-        end_time: slotData.end_time,
-        capacity: slotData.capacity,
-        is_critical: slotData.is_critical,
-        role: slotData.role,
-        compensation: slotData.compensation
-      }]).select("id, organization_id, date, start_time, end_time, capacity, is_critical, role, compensation");
+      console.log("CREATE PAYLOAD FINAL:", payload);
+      
+      const { data, error } = await supabase
+        .from("slots")
+        .insert([payload])
+        .select();
 
-      console.log("INSERT RESULT:", data);
-      console.log("INSERT ERROR:", error);
+      console.log("CREATE RESPONSE:", { data, error });
 
       if (error) {
+        console.error("REAL CREATE ERROR:", error);
+        alert("Fehler beim Erstellen: " + error.message);
         return { success: false, error };
       }
 
-      console.log("INSERT SUCCESS");
+      if (!data || data.length === 0) {
+        console.error("CREATE FAILED: Supabase returned no inserted row", { payload, data });
+        alert("Slot wurde nicht gespeichert. Supabase hat keine Zeile zurückgegeben.");
+        return { success: false };
+      }
+
       window.dispatchEvent(new Event("slots_updated"));
-
-      setSlots(current => {
-        const exists = current.find(s => s.date === date && s.start_time === startTime && s.end_time === endTime);
-        if (!exists) {
-          return [...current, {
-            ...slotData,
-            time: `${startTime} - ${endTime}`,
-            status: 'active',
-            isCritical: false,
-            bookings: []
-          }];
-        }
-        return current;
-      });
-
       return { success: true };
+
     } catch (error) {
       console.error("Supabase Write Fehler", error);
+      alert("Schwerwiegender Fehler beim Erstellen des Slots.");
       return { success: false, error };
     }
   };
