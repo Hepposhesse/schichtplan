@@ -143,6 +143,18 @@ body {
 .app-wrapper::-webkit-scrollbar {
   display: none;
 }
+
+.header-container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  box-sizing: border-box;
+}
+
+.employee-select-wrapper {
+  position: relative;
+  overflow: visible !important;
+}
 .header {
   text-align: center;
   position: relative;

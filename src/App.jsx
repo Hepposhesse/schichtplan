@@ -43,6 +43,25 @@ function App() {
   const [supabaseUsers, setSupabaseUsers] = useState([]);
   const [showPastSlots, setShowPastSlots] = useState(false);
 
+  // Authentication State
+  const [authorized, setAuthorized] = useState(false);
+  const PASSWORD = "123456"; // später ändern
+
+  useEffect(() => {
+    const saved = localStorage.getItem("auth");
+    if (saved === "true") setAuthorized(true);
+  }, []);
+
+  const handleAuthLogin = () => {
+    const input = prompt("Passwort:");
+    if (input === PASSWORD) {
+      localStorage.setItem("auth", "true");
+      setAuthorized(true);
+    } else {
+      alert("Falsch");
+    }
+  };
+
   const slots = supabaseSlots;
   const users = supabaseUsers;
 
@@ -492,6 +511,16 @@ function App() {
     );
   }
 
+  if (!authorized) {
+    return (
+      <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button className="primary-btn" onClick={handleAuthLogin} style={{ padding: '12px 24px', borderRadius: '12px', fontSize: '16px' }}>
+          Zugang öffnen
+        </button>
+      </div>
+    );
+  }
+
   return (
     <>
     <div className="app-container">
@@ -499,7 +528,7 @@ function App() {
 
 
       <div className="header">
-        <div className="app-wrapper header-inner">
+        <div className="header-container">
           <div className="container-header">
           {!isAdmin ? (
             <button className="btn btn-sm btn-secondary admin-button" onClick={handleLoginClick}>Admin-Modus</button>
@@ -510,7 +539,7 @@ function App() {
           {!isAdmin && <p style={{ margin: 0 }}>Trage dich für verfügbare Schichten ein.</p>}
         </div>
         
-        <div style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--primary-color)', display: 'inline-flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem', alignItems: 'flex-start', minWidth: '250px', maxWidth: '100%' }}>
+        <div className="employee-select-wrapper" style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--primary-color)', display: 'inline-flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem', alignItems: 'flex-start', minWidth: '250px', maxWidth: '100%' }}>
           <span className="fab-label" style={{ color: 'var(--primary-color)' }}>Mitarbeiter auswählen:</span>
           {console.log("USERS ARRAY:", users)}
           <div className="custom-user-select-container" style={{ width: '100%' }}>
