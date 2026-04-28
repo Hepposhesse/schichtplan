@@ -71,7 +71,7 @@ function App() {
     try {
       const { data, error } = await supabase
         .from("slots")
-        .select("id, organization_id, date, start_time, end_time, capacity, is_critical");
+        .select("id, organization_id, date, start_time, end_time, capacity, is_critical, role, compensation");
 
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
@@ -93,15 +93,23 @@ function App() {
         (usersData || []).map(u => [u.id, u.name])
       );
 
-      const formattedSlots = (data || []).map(slot => ({
-        ...slot,
-        date: slot.date?.slice(0, 10),
-        bookings: (bookingsData || []).filter(b => b.slot_id === slot.id).map(b => ({
-          ...b,
-          name: usersMap[b.user_id] || "Unbekannt"
-        })),
-        time: `${slot.start_time} - ${slot.end_time}`
-      }));
+      const formattedSlots = (data || []).map(slot => {
+        const mapped = {
+          ...slot,
+          time: slot.time ?? `${slot.start_time} - ${slot.end_time}`,
+          status: 'active',
+          bookings: slot.bookings ?? (bookingsData || []).filter(b => b.slot_id === slot.id).map(b => ({
+            ...b,
+            name: usersMap[b.user_id] || "Unbekannt"
+          })),
+          date: slot.date?.slice(0, 10),
+          role: slot.role ?? null,
+          compensation: slot.compensation ?? null
+        };
+        
+        console.log("FINAL SLOT OBJECT:", mapped);
+        return mapped;
+      });
 
       const mergedSlots = Object.values(
         (formattedSlots || []).reduce((acc, slot) => {
@@ -410,10 +418,11 @@ function App() {
       current = next;
     }
 
+    console.log("SAVING SLOT:", { role, compensation });
     const { data, error } = await supabase
       .from("slots")
       .insert(slotsToInsert)
-      .select();
+      .select("id, organization_id, date, start_time, end_time, capacity, is_critical, role, compensation");
 
     if (error) {
       console.error("REAL INSERT ERROR:", error);
@@ -480,40 +489,24 @@ function App() {
   const now = new Date();
   const showPast = showPastSlots;
 
+  console.log("ALL SLOTS BEFORE FILTER:", sortedSlots);
+
   const filteredSlots = sortedSlots.filter(slot => {
-    if (!slot.date || !slot.start_time) return false;
+    console.log("FILTER CHECK:", {
+      slotDate: slot.date,
+      selectedDate: currentDate?.slice(0, 10),
+      start_time: slot.start_time
+    });
 
-    const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
-    const isPast = slotDateTime < now;
+    if (!slot.date) return false;
 
-    // Toggle controls visibility
-    if (!showPast && isPast) return false;
-
-    return true;
+    return slot.date === currentDate?.slice(0, 10);
   });
 
-  const scopedAllSlots = viewMode === "day"
-    ? filteredSlots.filter(slot => {
-        const slotDate = String(slot.date).slice(0, 10);
-        return slotDate === selectedDate;
-      })
-    : filteredSlots;
+  console.log("FILTERED RESULT:", filteredSlots);
 
-  const daySlots = scopedAllSlots.filter(slot => {
-    const isBooked = selectedUserId ? slot.bookings?.some(b => b.user_id === selectedUserId) : false;
-    const hasCapacity = (slot.capacity || 0) - (slot.bookings?.length || 0) > 0;
-
-    let passesFilter = true;
-    if (filter === "mine") {
-      passesFilter = isBooked;
-    } else if (filter === "open") {
-      passesFilter = hasCapacity && !isBooked;
-    } else if (filter === "critical") {
-      passesFilter = slot.isCritical && hasCapacity && !isBooked;
-    }
-
-    return passesFilter;
-  });
+  const scopedAllSlots = filteredSlots;
+  const daySlots = filteredSlots;
 
   const todayStr = formatDate(now);
   const currentHours = now.getHours();
@@ -820,7 +813,36 @@ function App() {
                     </div>
 
                     <div className="fab-input-group" style={{ flexDirection: 'row', marginLeft: 'auto', gap: '0.5rem', marginBottom: '1px' }}>
-                      <button className="btn btn-secondary" onClick={handleBatchUpdate}>Änderungen übernehmen</button>
+                      <button className="btn btn-secondary" onClick={async () => {
+                        console.log("BULK SAVE CLICKED");
+                        
+                        const selectedSlots = globalSelection.map(id => sortedSlots.find(s => s.id === id)).filter(Boolean);
+
+                        console.log("SELECTED SLOTS:", selectedSlots);
+                        console.log("NEW VALUES:", {
+                          role: batchRole,
+                          compensation: batchCompensation,
+                          capacity: batchCapacity
+                        });
+
+                        for (const slot of selectedSlots) {
+                          const { data, error } = await supabase
+                            .from("slots")
+                            .update({
+                              role: batchRole,
+                              compensation: batchCompensation,
+                              capacity: batchCapacity
+                            })
+                            .eq("id", slot.id)
+                            .select();
+
+                          console.log("UPDATE RESULT:", { data, error });
+                        }
+
+                        console.log("BULK UPDATE DONE");
+                        await fetchSlots();
+                        setGlobalSelection([]);
+                      }}>Änderungen übernehmen</button>
                       <button className="btn btn-danger" onClick={handleBatchDelete} title="Löschen">🗑️</button>
                     </div>
                   </div>

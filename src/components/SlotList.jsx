@@ -45,6 +45,7 @@ export function SlotList({ scopedSlots, allSlots, currentDate, viewMode, onBook,
               onBook={onBook} 
               onDelete={onDelete} 
               onEdit={onEdit}
+              updateSlot={onEdit}
               isSelected={globalSelection.includes(slot.id)}
               onToggleSelect={() => toggleSelection(slot.id)}
               isAdmin={isAdmin}
@@ -104,6 +105,7 @@ export function SlotList({ scopedSlots, allSlots, currentDate, viewMode, onBook,
                        onBook={onBook} 
                        onDelete={onDelete} 
                        onEdit={onEdit}
+                       updateSlot={onEdit}
                        isSelected={globalSelection.includes(slot.id)}
                        onToggleSelect={() => toggleSelection(slot.id)}
                        compact={true}

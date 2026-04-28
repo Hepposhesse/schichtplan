@@ -77,7 +77,10 @@ export function AdminForm({ onAdd, conflictError, currentDate }) {
         />
         <select 
           value={role} 
-          onChange={e => setRole(e.target.value)} 
+          onChange={e => {
+            console.log("ROLE SELECTED:", e.target.value);
+            setRole(e.target.value);
+          }}
           className="input-admin"
           title="Rolle für diesen Zeitraum"
         >
@@ -88,7 +91,10 @@ export function AdminForm({ onAdd, conflictError, currentDate }) {
         </select>
         <select 
           value={compensation} 
-          onChange={e => setCompensation(e.target.value)} 
+          onChange={e => {
+            console.log("COMPENSATION SELECTED:", e.target.value);
+            setCompensation(e.target.value);
+          }}
           className="input-admin"
           title="Vergütung"
         >

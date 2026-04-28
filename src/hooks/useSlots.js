@@ -40,12 +40,29 @@ export function useSlots() {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved) || [];
+        const parsed = JSON.parse(saved) || [];
+        return parsed.map(slot => {
+          const mapped = {
+            ...slot,
+            role: slot.role,
+            compensation: slot.compensation
+          };
+          console.log("PIPELINE SLOT:", mapped);
+          return mapped;
+        });
       } catch (e) {
         return [];
       }
     }
-    return INITIAL_SLOTS;
+    return INITIAL_SLOTS.map(slot => {
+      const mapped = {
+        ...slot,
+        role: slot.role,
+        compensation: slot.compensation
+      };
+      console.log("PIPELINE SLOT:", mapped);
+      return mapped;
+    });
   });
 
   const [isAdmin, setIsAdmin] = useState(false);
@@ -288,11 +305,12 @@ export function useSlots() {
       end_time: endTime,
       capacity: Number(capacity) || 1,
       is_critical: false,
-      role: role || 'multiskill',
-      compensation: compensation || 'standard'
+      role: role,
+      compensation: compensation
     };
 
     try {
+      console.log("SAVING SLOT:", { role, compensation });
       const { data, error } = await supabase.from("slots").insert([{
         id: slotData.id,
         organization_id: slotData.organization_id,
@@ -300,8 +318,10 @@ export function useSlots() {
         start_time: slotData.start_time,
         end_time: slotData.end_time,
         capacity: slotData.capacity,
-        is_critical: slotData.is_critical
-      }]).select();
+        is_critical: slotData.is_critical,
+        role: slotData.role,
+        compensation: slotData.compensation
+      }]).select("id, organization_id, date, start_time, end_time, capacity, is_critical, role, compensation");
 
       console.log("INSERT RESULT:", data);
       console.log("INSERT ERROR:", error);
@@ -344,9 +364,66 @@ export function useSlots() {
     setSlots(current => current.filter(s => !slotIds.includes(s.id)));
   };
 
-  const editSlot = (slotId, updates) => {
-    if (!isAdmin) return;
+  const editSlot = async (slotId, updates) => {
+    console.log("UPDATE FUNCTION ENTERED");
+    
+    try {
+      let start_time, end_time;
+      if (updates.time) {
+        start_time = updates.time.split(" - ")[0];
+        end_time = updates.time.split(" - ")[1];
+      }
+
+      console.log("UPDATE INPUT RAW:", {
+        slotId,
+        start_time,
+        end_time,
+        date: updates.date,
+        capacity: updates.capacity,
+        role: updates.role,
+        compensation: updates.compensation
+      });
+
+      const payload = {
+        start_time,
+        end_time,
+        date: updates.date,
+        capacity: updates.capacity,
+        role: updates.role,
+        compensation: updates.compensation
+      };
+
+      if (updates.isCritical !== undefined) {
+        payload.is_critical = updates.isCritical;
+      }
+
+      console.log("UPDATE PAYLOAD FINAL:", payload);
+
+      console.log("UPDATE SLOT ID:", slotId);
+      const targetSlot = slots.find(s => s.id === slotId);
+      console.log("SLOT OBJECT ID:", targetSlot?.id);
+
+      const updateId = targetSlot?.id || slotId;
+
+      const { data, error } = await supabase
+        .from("slots")
+        .update(payload)
+        .eq("id", updateId)
+        .select();
+
+      console.log("UPDATE RESULT:", { data, error });
+
+      if (error) {
+        console.error("Supabase Update Fehler:", error);
+        return;
+      }
+    } catch (err) {
+      console.error("Update Crash:", err);
+      return;
+    }
+
     setSlots(current => current.map(s => s.id === slotId ? { ...s, ...updates } : s));
+    window.dispatchEvent(new Event("slots_updated"));
   };
 
   const updateMultipleCapacities = (slotIds, newCapacity) => {

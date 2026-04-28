@@ -1,11 +1,24 @@
 import React, { useState } from 'react';
 import { NotificationModal } from './NotificationModal';
 
+const ROLE_LABELS = {
+  multiskill: 'Multiskill',
+  email: 'E-Mail',
+  telefonie: 'Telefonie',
+  chat: 'Chat'
+};
+
+const COMP_LABELS = {
+  standard: 'Standard',
+  special: 'Sondervergütung'
+};
+
 export function SlotCard({ 
   slot = {}, 
   onBook = () => {}, 
   onDelete = () => {}, 
   onEdit = () => {}, 
+  updateSlot,
   isSelected = false, 
   onToggleSelect = () => {}, 
   compact = false, 
@@ -14,9 +27,11 @@ export function SlotCard({
   filter = 'all',
   selectedUserId,
   unbookSlot,
-  showToast
 }) {
+  console.log("SLOTCARD RECEIVES:", slot);
   if (!slot || !slot.id) return null;
+
+  console.log("RENDER SLOT:", slot.role, slot.compensation);
 
   const safeCapacity = Number(slot.capacity) || 0;
   const safeBookings = Array.isArray(slot.bookings) ? slot.bookings : [];
@@ -29,7 +44,7 @@ export function SlotCard({
   const [unbookReason, setUnbookReason] = useState('');
   const [isEditing, setIsEditing] = useState(false);
   const [successMsg, setSuccessMsg] = useState(false);
-  const [editData, setEditData] = useState({ date: slot.date || '', time: displayTime, capacity: safeCapacity, role: slot.role || 'multiskill', compensation: slot.compensation || 'standard' });
+  const [editData, setEditData] = useState({ date: slot.date || '', time: displayTime, capacity: safeCapacity, role: slot.role, compensation: slot.compensation });
 
   const isFull = safeBookingsLength >= safeCapacity;
   const isAvailable = !isFull && slot.status === 'active';
@@ -62,22 +77,11 @@ export function SlotCard({
   const isPast = slotTime < cleanNow;
 
 
-  const handleEditSave = (e) => {
-    e.preventDefault();
-    onEdit(slot.id, {
-      date: editData.date,
-      time: editData.time,
-      capacity: Number(editData.capacity),
-      role: editData.role,
-      compensation: editData.compensation
-    });
-    setIsEditing(false);
-  };
-
   if (isEditing) {
+    console.log("RENDER SAVE BUTTON");
     return (
       <div className={`slot-card edit-mode ${compact ? 'compact' : ''}`} id={`slot-${slot.id}`} style={{ padding: '20px' }}>
-        <form className="admin-form" style={{ width: '100%', flexDirection: 'column', gap: '1.2rem', alignItems: 'stretch' }} onSubmit={handleEditSave}>
+        <div className="admin-form" style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.2rem', alignItems: 'stretch' }}>
           
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
             <div className="fab-input-group">
@@ -99,7 +103,10 @@ export function SlotCard({
           <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
             <div className="fab-input-group">
               <span className="fab-label">Rolle:</span>
-              <select value={editData.role} onChange={e => setEditData({...editData, role: e.target.value})} required className="input-admin">
+              <select value={editData.role} onChange={e => {
+                console.log("ROLE SELECTED:", e.target.value);
+                setEditData({...editData, role: e.target.value});
+              }} required className="input-admin">
                  <option value="multiskill">Multiskill</option>
                  <option value="email">E-Mail</option>
                  <option value="telefonie">Telefonie</option>
@@ -109,19 +116,30 @@ export function SlotCard({
 
             <div className="fab-input-group">
               <span className="fab-label">Vergütung:</span>
-              <select value={editData.compensation} onChange={e => setEditData({...editData, compensation: e.target.value})} required className="input-admin">
+              <select value={editData.compensation} onChange={e => {
+                console.log("COMPENSATION SELECTED:", e.target.value);
+                setEditData({...editData, compensation: e.target.value});
+              }} required className="input-admin">
                  <option value="standard">Standard</option>
                  <option value="special">Sondervergütung</option>
               </select>
             </div>
 
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
-              <button type="submit" className="btn btn-primary btn-sm" title="Änderungen speichern">OK</button>
+              <button
+                data-test-id="save-slot-button"
+                style={{ background: "red", color: "white", zIndex: 9999 }}
+                onClick={(e) => {
+                  console.log("SAVE CLICKED CORRECT BUTTON");
+                }}
+              >
+                SAVE TEST BUTTON
+              </button>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsEditing(false)} title="Abbrechen">X</button>
             </div>
           </div>
 
-        </form>
+        </div>
       </div>
     );
   }
@@ -152,8 +170,8 @@ export function SlotCard({
         
         {isSelected && <div className="check-abs">✔</div>}
 
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', paddingLeft: '8px', paddingRight: '28px' }}>
-          <div className="slot-top">
+        <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+          <div className="slot-header">
             <span className="time">
               {displayTime}
             </span>
@@ -167,16 +185,20 @@ export function SlotCard({
             </div>
           </div>
 
-          <div className="slot-tags" style={{ marginTop: '0.8rem', marginBottom: '1rem' }}>
-            <span className="tag role">
-              📞 {slot.role === 'email' ? 'E-Mail' : slot.role === 'telefonie' ? 'Telefonie' : slot.role === 'chat' ? 'Chat' : 'Multiskill'}
-            </span>
-            <span className="tag pay">
-              💰 {slot.compensation === 'special' ? 'Sondervergütung' : 'Standard'}
-            </span>
-            {isCritical && <span className="tag" style={{ color: 'var(--danger-color)' }}>Kritisch</span>}
-            {isFull && <span className="tag" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5' }}>Voll</span>}
-          </div>
+          {(() => {
+            const roleLabel = ROLE_LABELS[slot.role] || slot.role || "FEHLT ROLE";
+            const compLabel = COMP_LABELS[slot.compensation] || slot.compensation || "FEHLT COMP";
+            return (
+              <div className="slot-meta">
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <div className="slot-label role">{roleLabel}</div>
+                  {isCritical && <div className="slot-label" style={{ color: 'var(--danger-color)' }}>Kritisch</div>}
+                  {isFull && <div className="slot-label" style={{ background: 'rgba(239, 68, 68, 0.2)', color: '#fca5a5' }}>Voll</div>}
+                </div>
+                <div className="slot-label comp">{compLabel}</div>
+              </div>
+            );
+          })()}
 
 
           {isAdmin && safeBookingsLength > 0 && (

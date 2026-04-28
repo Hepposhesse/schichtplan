@@ -199,7 +199,7 @@ body {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 12px 16px;
+  padding: 12px 16px 16px 16px;
   margin-bottom: 12px;
   display: flex;
   justify-content: space-between;
@@ -1121,12 +1121,13 @@ input[type="date"] {
   }
 }
 
-.slot-top {
+.slot-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
   font-size: 16px;
   font-weight: 600;
+  margin-bottom: 0;
 }
 
 .slot-tags {
@@ -1340,3 +1341,32 @@ input[type="date"] {
   transform: translateY(1px);
   box-shadow: 0 3px 10px rgba(0,0,0,0.2);
 }
+
+.badge-text {
+  display: inline-block;
+  margin-left: 6px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  opacity: 1;
+}
+
+.slot-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 16px;
+  margin-bottom: 0;
+}
+
+.slot-label {
+  background: rgba(255,255,255,0.06);
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  color: #fff;
+  opacity: 0.8;
+}
+
+.slot-card {
+}
+
