@@ -468,10 +468,19 @@ function App() {
     slotDates: sortedSlots.map(s => s.date)
   });
 
+  const now = new Date();
+
   const scopedAllSlots = viewMode === "day"
     ? sortedSlots.filter(slot => {
-        if (!slot.date) return false;
+        if (!slot.date || !slot.start_time) return false;
 
+        // Build full datetime from slot
+        const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
+
+        // Only allow future slots
+        if (slotDateTime < now) return false;
+
+        // Then apply date filter
         const slotDate = String(slot.date).slice(0, 10);
         return slotDate === selectedDate;
       })
@@ -493,7 +502,6 @@ function App() {
     return passesFilter;
   });
 
-  const now = new Date();
   const todayStr = formatDate(now);
   const currentHours = now.getHours();
   const currentMinutes = now.getMinutes();
