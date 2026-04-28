@@ -399,8 +399,7 @@ function App() {
           end_time: endTime,
           date: date,
           capacity: capacity,
-          role: role,
-          compensation: compensation
+          role: role
         }
       ]);
 
@@ -479,13 +478,7 @@ function App() {
 
   const scopedAllSlots = viewMode === "day"
     ? timeFilteredSlots.filter(slot => {
-        try {
-          const slotDate = new Date(slot.date).toISOString().split("T")[0];
-          const selected = new Date(currentDate).toISOString().split("T")[0];
-          return slotDate === selected;
-        } catch(e) {
-          return slot.date === currentDate;
-        }
+        return slot.date?.slice(0, 10) === currentDate;
       })
     : timeFilteredSlots;
 
