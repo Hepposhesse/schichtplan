@@ -409,13 +409,15 @@ function App() {
           end_time: endTime,
           date: date,
           capacity: capacity,
-          role: role
+          role: role,
+          compensation: compensation
         }
-      ]);
+      ])
+      .select();
 
     if (error) {
-      console.error("REAL INSERT ERROR:", error);
-      alert(error.message || "Fehler beim Erstellen");
+      console.error("INSERT ERROR:", error);
+      alert("Fehler beim Erstellen");
       return;
     }
 
