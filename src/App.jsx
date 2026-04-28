@@ -181,13 +181,10 @@ function App() {
     return `${day}.${month}.${year}`;
   };
 
-  const formatSlotDate = (dateString) => {
-    if (!dateString) return '';
-    const d = new Date(dateString);
-    const day = String(d.getDate()).padStart(2, '0');
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const weekday = d.toLocaleDateString("de-DE", { weekday: "short" });
-    return `${weekday} ${day}.${month}.`;
+  const formatDisplayDate = (dateString) => {
+    if (!dateString) return "";
+    const [year, month, day] = dateString.slice(0, 10).split("-");
+    return `${day}.${month}`;
   };
 
   const getToday = () => {
@@ -761,7 +758,7 @@ function App() {
                 onClick={() => setCurrentDate(d.date)}
                 className={`btn btn-sm ${currentDate === d.date ? "btn-primary active-day" : "btn-secondary"}`}
               >
-                {d.label} {d.day}
+                {formatDisplayDate(d.date)}
               </button>
             ))}
           </div>
