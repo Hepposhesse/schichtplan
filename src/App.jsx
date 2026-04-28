@@ -390,10 +390,26 @@ function App() {
     }
   };
 
-  const handleBatchDelete = () => {
+  const handleBatchDelete = async () => {
     if (window.confirm(`Möchtest du ${globalSelection.length} Slots wirklich löschen?`)) {
-      deleteMultipleSlots(globalSelection);
+      const { error } = await supabase.from("slots").delete().in("id", globalSelection);
+      if (error) {
+        console.error(error);
+        alert("Fehler beim Löschen der Slots");
+      } else {
+        fetchSlots();
+      }
       setGlobalSelection([]);
+    }
+  };
+
+  const handleSingleDelete = async (id) => {
+    const { error } = await supabase.from("slots").delete().eq("id", id);
+    if (error) {
+      console.error(error);
+      alert("Fehler beim Löschen des Slots");
+    } else {
+      fetchSlots();
     }
   };
 
@@ -674,8 +690,16 @@ function App() {
                   {users.map(u => (
                     <li key={u.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.8rem 1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '6px', border: '1px solid rgba(255,255,255,0.05)' }}>
                       <span style={{ fontSize: '1rem', color: '#fff', fontWeight: '500' }}>{u.name}</span>
-                      <button className="btn btn-danger btn-sm" onClick={() => {
-                        if(window.confirm(`User "${u.name}" wirklich entfernen?`)) deleteUser(u.id);
+                      <button className="btn btn-danger btn-sm" onClick={async () => {
+                        if(window.confirm(`User "${u.name}" wirklich entfernen?`)) {
+                          const { error } = await supabase.from("users").delete().eq("id", u.id);
+                          if (error) {
+                            console.error(error);
+                            alert("Fehler beim Löschen");
+                          } else {
+                            fetchUsers();
+                          }
+                        }
                       }}>🗑️ Entfernen</button>
                     </li>
                   ))}
@@ -789,7 +813,7 @@ function App() {
                 currentDate={currentDate}
                 viewMode={viewMode}
                 onBook={bookSlot} 
-                onDelete={deleteSlot} 
+                onDelete={handleSingleDelete} 
                 onEdit={editSlot}
                 globalSelection={globalSelection}
                 toggleSelection={toggleSelection}
