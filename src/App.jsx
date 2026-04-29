@@ -575,12 +575,21 @@ function App() {
     return (slot.bookings?.length || 0) < slot.capacity;
   };
 
+  const { start, end } = getWeekRange(currentDate);
+
   const daySlotsUnfiltered = sortedSlots.filter(slot => {
     if (!slot.date) return false;
     return slot.date === currentDate?.slice(0, 10);
   });
 
-  const filteredSlots = daySlotsUnfiltered.filter(slot => {
+  const weekSlotsUnfiltered = sortedSlots.filter(slot => {
+    if (!slot.date) return false;
+    return slot.date >= start && slot.date <= end;
+  });
+
+  const visibleSlotsUnfiltered = viewMode === "week" ? weekSlotsUnfiltered : daySlotsUnfiltered;
+
+  const filteredSlots = visibleSlotsUnfiltered.filter(slot => {
     if (filter === "mine") {
       return isBookedBySelectedUser(slot);
     }
@@ -596,13 +605,11 @@ function App() {
     return true;
   });
 
-  console.log("SLOT USER FILTER:", {
-    selectedUserId,
-    openSlots: daySlotsUnfiltered.filter(s => hasFreeCapacity(s) && !isBookedBySelectedUser(s)),
-    mySlots: daySlotsUnfiltered.filter(s => isBookedBySelectedUser(s))
+  console.log("VIEW DEBUG:", {
+    viewMode,
+    daySlots: daySlotsUnfiltered.length,
+    weekSlots: weekSlotsUnfiltered.length
   });
-
-  console.log("FILTERED RESULT:", filteredSlots);
 
   const scopedAllSlots = filteredSlots;
   const daySlots = filteredSlots;
@@ -1049,7 +1056,7 @@ function App() {
                </button>
                <div>
                   <h4 style={{marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)', textAlign: 'center'}}>Statistiken</h4>
-                  <Dashboard scopedSlots={scopedAllSlots} allSlots={daySlotsUnfiltered} filter={filter} setFilter={setFilter} isAdmin={isAdmin} selectedUserId={selectedUserId} />
+                  <Dashboard scopedSlots={scopedAllSlots} allSlots={visibleSlotsUnfiltered} filter={filter} setFilter={setFilter} isAdmin={isAdmin} selectedUserId={selectedUserId} />
                </div>
                 <div className="modal-footer">
                   <button className="btn btn-secondary reset-btn" onClick={handleReset}>Zurücksetzen</button>
