@@ -5,10 +5,24 @@
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>terminplaner-aa24</title>
-    <script type="module" crossorigin src="/assets/index-KiddoSv8.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-7Er11-rI.css">
+    <script type="module" crossorigin src="/assets/index-ClrkEZho.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-BwjjyUJc.css">
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // 1. CLICK DEBUG EINBAUEN
+      document.addEventListener('click', (e) => {
+        console.log('CLICK TARGET:', e.target);
+        // Zusätzlich den computed z-index und pointer-events auslesen, falls es hilft:
+        const style = window.getComputedStyle(e.target);
+        console.log('Target Styles:', {
+          pointerEvents: style.pointerEvents,
+          zIndex: style.zIndex,
+          position: style.position,
+          className: e.target.className
+        });
+      }, true); // true = capture phase, um das Element so frueh wie moeglich abzufangen
+    </script>
   </body>
 </html>

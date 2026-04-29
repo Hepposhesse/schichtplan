@@ -293,6 +293,7 @@ function App() {
 
   const filterFirstRender = useRef(true);
   const listRef = useRef(null);
+  const slotsRef = useRef(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setIsLoaded(true), 150);
@@ -325,17 +326,54 @@ function App() {
       });
     }
   }, [currentDate]);
-
   useEffect(() => {
-    if (filterFirstRender.current) {
-      filterFirstRender.current = false;
-      return;
-    }
-    if (isLoaded && listRef.current) {
-      const y = listRef.current.getBoundingClientRect().top + window.scrollY - 20;
-      window.scrollTo({ top: y, behavior: 'smooth' });
-    }
-  }, [filter, isLoaded]);
+    const handleWheel = (e) => {
+      const slots = slotsRef.current;
+      if (!slots) return;
+
+      // detect open dropdown
+      const dropdown = document.querySelector('.custom-user-select-dropdown');
+
+      if (dropdown) {
+        const canScrollDropdown =
+          dropdown.scrollHeight > dropdown.clientHeight;
+
+        if (canScrollDropdown) {
+          // check if mouse is inside dropdown
+          const rect = dropdown.getBoundingClientRect();
+
+          const isInside =
+            e.clientX >= rect.left &&
+            e.clientX <= rect.right &&
+            e.clientY >= rect.top &&
+            e.clientY <= rect.bottom;
+
+          if (isInside) {
+            // allow native dropdown scroll
+            return;
+          }
+        }
+      }
+
+      // fallback → scroll slots container
+      const canScrollSlots =
+        slots.scrollHeight > slots.clientHeight;
+
+      if (!canScrollSlots) return;
+
+      e.preventDefault();
+      slots.scrollTop += e.deltaY;
+    };
+
+    window.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      window.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
+
+
 
   // Temporary logging for bugfixing to see if slots are correctly evaluated
   /*
@@ -679,7 +717,7 @@ function App() {
 
 
 
-      <div className="header">
+      <div className="header sticky-header">
         <div className="header-container">
           <div className="container-header">
           {!isAdmin ? (
@@ -688,10 +726,10 @@ function App() {
             <button className="btn btn-sm btn-danger admin-button" onClick={logout}>Admin beenden</button>
           )}
           <h1 style={{ marginTop: 0 }}>Schichtplanung</h1>
-          {!isAdmin && <p style={{ margin: 0 }}>Trage dich für verfügbare Schichten ein.</p>}
+          {!isAdmin && <p className="subtitle" style={{ margin: 0 }}>Trage dich für verfügbare Schichten ein.</p>}
         </div>
         
-        <div className="employee-select-wrapper" style={{ background: 'var(--bg-surface)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--primary-color)', display: 'inline-flex', flexDirection: 'column', gap: '0.5rem', marginTop: '1rem', alignItems: 'flex-start', minWidth: '250px', maxWidth: '100%' }}>
+        <div className="employee-select-wrapper employee-box" style={{ background: 'var(--bg-surface)', border: '1px solid var(--primary-color)', display: 'inline-flex', flexDirection: 'column', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'flex-start', minWidth: '250px', maxWidth: '100%' }}>
           <span className="fab-label" style={{ color: 'var(--primary-color)' }}>Mitarbeiter auswählen:</span>
           {console.log("USERS ARRAY:", users)}
           <div className="custom-user-select-container" style={{ width: '100%' }}>
@@ -737,17 +775,17 @@ function App() {
             )}
           </div>
           {selectedUserId && (
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>ℹ️ Du siehst nur verfügbare oder deine eigenen Schichten</span>
+            <span className="hint" style={{ marginTop: '0.25rem' }}>ℹ️ Du siehst nur verfügbare oder deine eigenen Schichten</span>
           )}
         </div>
         </div>
       </div>
       
-      <div className="app-wrapper">
-      <main>
+
         
+        <div className="content-wrapper">
         {isAdmin && (
-          <div className="display-row" style={{ marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+          <div className="display-row" style={{ marginBottom: '8px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '8px' }}>
             <div className="left-controls">
               <button 
                 className="btn btn-sm btn-primary" 
@@ -846,6 +884,7 @@ function App() {
             </div>
           </section>
         )}
+        </div>
 
         {/* --- IDENTITY RENDER GATE --- */}
         {!selectedUserId && !isAdmin ? (
@@ -862,7 +901,7 @@ function App() {
           {console.log("COUNT SOURCE:", slots)}
           {console.log("RENDER SOURCE:", daySlots)}
             
-        <div className="view-controls-column" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', marginBottom: '1rem', width: '100%' }}>
+        <div className="view-controls-column">
         <div className="week-header">
           <div className="week-nav">
             {dateStripDays.map((d) => (
@@ -959,7 +998,8 @@ function App() {
           </div>
         )}
 
-        <div className="slots-container">
+        <div className="slots-container" ref={slotsRef}>
+          <div className="content-wrapper">
           <div className="slot-date-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div />
             <button className="filter-btn" onClick={() => setShowFilterModal(true)}>
@@ -967,7 +1007,7 @@ function App() {
             </button>
           </div>
           <div className="date-divider" />
-          <div className="slots-container">
+          <div>
 
             <ErrorBoundary>
               <SlotList 
@@ -989,13 +1029,13 @@ function App() {
               />
             </ErrorBoundary>
           </div>
+          </div>
         </div>
           </>
         )}
           </>
         )}
-      </main>
-      </div>
+
 
       {showBatchUnbookModal && (
         <div className="modal-overlay" onClick={(e) => { e.stopPropagation(); setShowBatchUnbookModal(false); }}>
