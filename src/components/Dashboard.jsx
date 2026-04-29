@@ -1,10 +1,12 @@
 import React from 'react';
 
-export function Dashboard({ scopedSlots, filter, setFilter, isAdmin, selectedUserId }) {
+export function Dashboard({ scopedSlots, allSlots, filter, setFilter, isAdmin, selectedUserId }) {
   const now = new Date();
 
+  const baseSlots = allSlots || scopedSlots || [];
+
   // ONLY count future slots for actionable stats
-  const futureSlots = (scopedSlots || []).filter(slot => {
+  const futureSlots = baseSlots.filter(slot => {
     if (!slot.date || !slot.start_time) return false;
     const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
     return slotDateTime >= now;
@@ -20,7 +22,7 @@ export function Dashboard({ scopedSlots, filter, setFilter, isAdmin, selectedUse
     return selectedUserId ? slot.bookings?.some(b => b.user_id === selectedUserId) : false;
   }).length;
   
-  const pastCount = (scopedSlots || []).filter(slot => {
+  const pastCount = baseSlots.filter(slot => {
     if (!slot.date || !slot.start_time) return false;
     const slotDateTime = new Date(`${slot.date}T${slot.start_time}`);
     return slotDateTime < now;

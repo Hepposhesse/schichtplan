@@ -126,14 +126,20 @@ export function SlotCard({
             </div>
 
             <div style={{ marginLeft: 'auto', display: 'flex', gap: '0.8rem', marginTop: '0.5rem' }}>
-              <button
-                data-test-id="save-slot-button"
-                style={{ background: "red", color: "white", zIndex: 9999 }}
-                onClick={(e) => {
-                  console.log("SAVE CLICKED CORRECT BUTTON");
+              <button 
+                type="button" 
+                className="btn btn-primary btn-sm" 
+                title="Änderungen speichern"
+                onClick={() => {
+                  if (typeof updateSlot === 'function') {
+                    updateSlot(slot.id, { ...editData });
+                  } else if (typeof onEdit === 'function') {
+                    onEdit(slot.id, { ...editData });
+                  }
+                  setIsEditing(false);
                 }}
               >
-                SAVE TEST BUTTON
+                Änderungen übernehmen
               </button>
               <button type="button" className="btn btn-secondary btn-sm" onClick={() => setIsEditing(false)} title="Abbrechen">X</button>
             </div>

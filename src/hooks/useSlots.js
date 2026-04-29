@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '../supabase';
+import { ADMIN_PASSWORD } from '../config/auth';
 
 const STORAGE_KEY = 'terminplaner_slots';
 const USERS_KEY = 'terminplaner_users';
@@ -66,19 +67,10 @@ export function useSlots() {
   });
 
   const [isAdmin, setIsAdmin] = useState(false);
-  
-  const DEFAULT_PASSWORD = "admin123";
-  const [adminPassword, setAdminPassword] = useState(() => {
-    const savedPwd = localStorage.getItem('terminplaner_pwd');
-    if (savedPwd) return savedPwd;
-    
-    // Initial Setup: Speichere das Default-Passwort hart in den LocalStorage
-    localStorage.setItem('terminplaner_pwd', DEFAULT_PASSWORD);
-    return DEFAULT_PASSWORD;
-  });
 
   const login = (pwd) => {
-    if (pwd === adminPassword) {
+    console.log("ADMIN LOGIN CHECK:", pwd);
+    if (pwd === ADMIN_PASSWORD) {
       setIsAdmin(true);
       return true;
     }
@@ -90,12 +82,8 @@ export function useSlots() {
   };
 
   const changePassword = (currentPwd, newPwd) => {
-    if (!isAdmin) return false;
-    if (currentPwd !== adminPassword) return false;
-    
-    setAdminPassword(newPwd);
-    localStorage.setItem('terminplaner_pwd', newPwd);
-    return true;
+    console.warn("Password change disabled: Passwords are now hardcoded in config.");
+    return false;
   };
 
   const [users, setUsers] = useState(() => {

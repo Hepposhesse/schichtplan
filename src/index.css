@@ -1,5 +1,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
+
+
 :root {
   --bg-color: #0f172a;
   --bg-surface: rgba(30, 41, 59, 0.7);
@@ -1315,6 +1317,8 @@ input[type="date"] {
 
 .cta-floating button {
   pointer-events: auto;
+  position: relative;
+  z-index: 10000;
   border: none;
   outline: none;
   width: auto;

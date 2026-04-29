@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { LOGIN_PASSWORD } from './config/auth';
 import { useSlots } from './hooks/useSlots';
 import { SlotList, getWeekDates } from './components/SlotList';
 import { AdminForm } from './components/AdminForm';
@@ -43,9 +44,12 @@ function App() {
   const [supabaseUsers, setSupabaseUsers] = useState([]);
   const [showPastSlots, setShowPastSlots] = useState(false);
 
+  const [currentDate, setCurrentDate] = useState(() => {
+    return new Date().toISOString().slice(0, 10);
+  });
+
   // Authentication State
   const [authorized, setAuthorized] = useState(false);
-  const PASSWORD = "123456"; // später ändern
 
   useEffect(() => {
     const saved = localStorage.getItem("auth");
@@ -54,7 +58,7 @@ function App() {
 
   const handleAuthLogin = () => {
     const input = prompt("Passwort:");
-    if (input === PASSWORD) {
+    if (input === LOGIN_PASSWORD) {
       localStorage.setItem("auth", "true");
       setAuthorized(true);
     } else {
@@ -67,11 +71,52 @@ function App() {
 
   console.log("SLOTS RAW:", slots);
 
-  const fetchSlots = async () => {
+  const getWeekRange = (selectedDate) => {
+    const date = new Date(selectedDate);
+    const day = date.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+
+    const monday = new Date(date);
+    monday.setDate(date.getDate() + diffToMonday);
+
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
+    const start = monday.toISOString().slice(0, 10);
+    const end = sunday.toISOString().slice(0, 10);
+
+    console.log("WEEK RANGE:", { start, end });
+
+    return { start, end };
+  };
+
+  const fetchSlots = async (start = null, end = null) => {
     try {
+      let startDate = start;
+      let endDate = end;
+      
+      if (!startDate || !endDate) {
+        const range = getWeekRange(currentDate);
+        startDate = range.start;
+        endDate = range.end;
+      }
+
+      const formatDate = (d) => {
+        return new Date(d).toISOString().slice(0, 10);
+      };
+
+      startDate = formatDate(startDate);
+      endDate = formatDate(endDate);
+
+      console.log("FETCH RANGE:", { startDate, endDate });
+
       const { data, error } = await supabase
         .from("slots")
-        .select("id, organization_id, date, start_time, end_time, capacity, is_critical, role, compensation");
+        .select("id, organization_id, date, start_time, end_time, capacity, is_critical, role, compensation")
+        .gte("date", startDate)
+        .lte("date", endDate);
+
+      console.log("FETCH RESULT:", data);
 
       const { data: bookingsData, error: bookingsError } = await supabase
         .from("bookings")
@@ -94,18 +139,26 @@ function App() {
       );
 
       const formattedSlots = (data || []).map(slot => {
+        const slotBookings = (bookingsData || []).filter(b => b.slot_id === slot.id).map(b => ({
+          ...b,
+          name: usersMap[b.user_id] || "Unbekannt"
+        }));
+
         const mapped = {
           ...slot,
           time: slot.time ?? `${slot.start_time} - ${slot.end_time}`,
           status: 'active',
-          bookings: slot.bookings ?? (bookingsData || []).filter(b => b.slot_id === slot.id).map(b => ({
-            ...b,
-            name: usersMap[b.user_id] || "Unbekannt"
-          })),
+          bookings: slotBookings,
           date: slot.date?.slice(0, 10),
           role: slot.role ?? null,
           compensation: slot.compensation ?? null
         };
+        
+        console.log("SLOT BOOKINGS COUNT:", {
+          slotId: mapped.id,
+          bookings: mapped.bookings.length,
+          capacity: mapped.capacity
+        });
         
         console.log("FINAL SLOT OBJECT:", mapped);
         return mapped;
@@ -150,19 +203,25 @@ function App() {
   };
 
   useEffect(() => {
-    fetchSlots();
     fetchUsers();
   }, []);
 
   useEffect(() => {
+    if (!currentDate) return;
+    const { start, end } = getWeekRange(currentDate);
+    fetchSlots(start, end);
+  }, [currentDate]);
+
+  useEffect(() => {
     const handler = () => {
       console.log("REFETCH TRIGGERED");
-      fetchSlots();
+      const { start, end } = getWeekRange(currentDate);
+      fetchSlots(start, end);
     };
 
     window.addEventListener("slots_updated", handler);
     return () => window.removeEventListener("slots_updated", handler);
-  }, []);
+  }, [currentDate]);
 
   useEffect(() => {
     console.log("Datenquelle Slots:", supabaseSlots.length > 0 ? "Supabase" : "Local");
@@ -195,19 +254,6 @@ function App() {
     return `${day}.${month}`;
   };
 
-  const getToday = () => {
-    const d = new Date();
-    return d.toISOString().split("T")[0];
-  };
-
-  const [currentDate, setCurrentDate] = useState(getToday());
-
-  useEffect(() => {
-    if (!currentDate) {
-      setCurrentDate(getToday());
-    }
-  }, []);
-
   const getDateStripDays = (baseDate) => {
     const base = new Date(baseDate);
 
@@ -223,7 +269,7 @@ function App() {
     });
   };
 
-  const dateStripDays = getDateStripDays(currentDate || getToday());
+  const dateStripDays = getDateStripDays(currentDate || new Date().toISOString().slice(0, 10));
   const [showFilterModal, setShowFilterModal] = useState(false);
 
   const [globalSelection, setGlobalSelection] = useState([]);
@@ -361,15 +407,60 @@ function App() {
     setGlobalSelection(prev => prev.includes(id) ? prev.filter(sid => sid !== id) : [...prev, id]);
   };
 
-  const handleBatchBook = () => {
+  const handleBatchBook = async () => {
     const user = users.find(u => u.id === selectedUserId);
     if (user && globalSelection.length > 0) {
-      if (bookMultipleSlots(globalSelection, user.id, user.name)) {
-         setGlobalSelection([]);
-         showToast("Slots erfolgreich eingebucht!");
-      } else {
-         showToast("Ausgewählte Slots sind bereits voll oder nicht verfügbar.", true);
+      const selectedSlots = globalSelection.map(id => sortedSlots.find(s => s.id === id)).filter(Boolean);
+      
+      console.log("BOOKING VALIDATION DEBUG:",
+        selectedSlots.map(slot => ({
+          id: slot.id,
+          capacity: slot.capacity,
+          bookings: (slot.bookings || []).length
+        }))
+      );
+
+      const isSlotFull = (slot) => {
+        return (slot.bookings || []).length >= slot.capacity;
+      };
+
+      if (selectedSlots.some(slot => isSlotFull(slot))) {
+        showToast("Ausgewählte Slots sind bereits voll oder nicht verfügbar.", true);
+        return;
       }
+
+      console.log("BOOKING START", { selectedSlots, selectedUser: user.id });
+
+      const inserts = selectedSlots.map(slot => ({
+        slot_id: slot.id,
+        user_id: user.id
+      }));
+
+      console.log("BOOKING PAYLOAD:", inserts);
+
+      const { data, error } = await supabase
+        .from("bookings")
+        .insert(inserts)
+        .select();
+
+      console.log("BOOKING RESULT:", { data, error });
+
+      if (error) {
+        console.error("BOOKING ERROR:", error);
+        alert("Fehler beim Buchen: " + error.message);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        console.error("BOOKING FAILED: no rows inserted");
+        alert("Buchung fehlgeschlagen.");
+        return;
+      }
+
+      console.log("BOOKING SUCCESS");
+      await fetchSlots();
+      setGlobalSelection([]);
+      showToast("Slots erfolgreich eingebucht!");
     }
   };
 
@@ -491,16 +582,39 @@ function App() {
 
   console.log("ALL SLOTS BEFORE FILTER:", sortedSlots);
 
-  const filteredSlots = sortedSlots.filter(slot => {
-    console.log("FILTER CHECK:", {
-      slotDate: slot.date,
-      selectedDate: currentDate?.slice(0, 10),
-      start_time: slot.start_time
-    });
+  const isBookedBySelectedUser = (slot) => {
+    return slot.bookings?.some(b => b.user_id === selectedUserId);
+  };
 
+  const hasFreeCapacity = (slot) => {
+    return (slot.bookings?.length || 0) < slot.capacity;
+  };
+
+  const daySlotsUnfiltered = sortedSlots.filter(slot => {
     if (!slot.date) return false;
-
     return slot.date === currentDate?.slice(0, 10);
+  });
+
+  const filteredSlots = daySlotsUnfiltered.filter(slot => {
+    if (filter === "mine") {
+      return isBookedBySelectedUser(slot);
+    }
+    
+    if (filter === "open") {
+      return hasFreeCapacity(slot) && !isBookedBySelectedUser(slot);
+    }
+    
+    if (filter === "critical") {
+      return slot.is_critical === true;
+    }
+
+    return true;
+  });
+
+  console.log("SLOT USER FILTER:", {
+    selectedUserId,
+    openSlots: daySlotsUnfiltered.filter(s => hasFreeCapacity(s) && !isBookedBySelectedUser(s)),
+    mySlots: daySlotsUnfiltered.filter(s => isBookedBySelectedUser(s))
   });
 
   console.log("FILTERED RESULT:", filteredSlots);
@@ -531,6 +645,8 @@ function App() {
   console.log("globalSelection:", globalSelection);
 
   const handleBatchAction = () => {
+    console.log("BOOKING FUNCTION ENTERED");
+    console.log("SELECTED SLOTS:", globalSelection);
     if (filter === "mine") {
       handleBatchUnbook();
     } else {
@@ -539,7 +655,7 @@ function App() {
   };
 
   const handleReset = () => {
-    setCurrentDate(getToday());
+    setCurrentDate(new Date().toISOString().slice(0, 10));
     setFilter("open");
     setShowPastSlots(false);
   };
@@ -948,7 +1064,7 @@ function App() {
                </button>
                <div>
                   <h4 style={{marginTop: 0, marginBottom: '1rem', color: 'var(--text-primary)', textAlign: 'center'}}>Statistiken</h4>
-                  <Dashboard scopedSlots={scopedAllSlots} filter={filter} setFilter={setFilter} isAdmin={isAdmin} selectedUserId={selectedUserId} />
+                  <Dashboard scopedSlots={scopedAllSlots} allSlots={daySlotsUnfiltered} filter={filter} setFilter={setFilter} isAdmin={isAdmin} selectedUserId={selectedUserId} />
                </div>
                 <div className="modal-footer">
                   <button className="btn btn-secondary reset-btn" onClick={handleReset}>Zurücksetzen</button>
@@ -984,7 +1100,10 @@ function App() {
         <div className="cta-floating">
           <button
             className="primary-btn"
-            onClick={handleBatchAction}
+            onClick={(e) => {
+              console.log("BOOKING CLICKED");
+              handleBatchAction();
+            }}
             disabled={!selectedUserId || users.length === 0}
           >
             {filter === "mine"
