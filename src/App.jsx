@@ -164,24 +164,9 @@ function App() {
         return mapped;
       });
 
-      const mergedSlots = Object.values(
-        (formattedSlots || []).reduce((acc, slot) => {
-          const key = `${slot.date}_${slot.start_time}_${slot.end_time}_${slot.role}_${slot.compensation}`;
-
-          if (!acc[key]) {
-            acc[key] = { ...slot };
-          } else {
-            acc[key].capacity = (acc[key].capacity || 1) + (slot.capacity || 1);
-            acc[key].bookings = [...(acc[key].bookings || []), ...(slot.bookings || [])];
-          }
-
-          return acc;
-        }, {})
-      );
-
       console.log("FORMATTED SLOTS:", formattedSlots);
-      console.log("SUPABASE SLOTS FINAL:", mergedSlots);
-      setSupabaseSlots(mergedSlots);
+      console.log("SUPABASE SLOTS FINAL:", formattedSlots);
+      setSupabaseSlots(formattedSlots);
 
     } catch (err) {
       console.error("Fetch Slots Crash", err);

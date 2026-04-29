@@ -33,9 +33,13 @@ export function SlotCard({
 
   console.log("RENDER SLOT:", slot.role, slot.compensation);
 
-  const safeCapacity = Number(slot.capacity) || 0;
+  const booked = slot.bookings?.length || 0;
+  const capacity = slot.capacity;
+  const free = capacity - booked;
+
+  const safeCapacity = capacity;
   const safeBookings = Array.isArray(slot.bookings) ? slot.bookings : [];
-  const safeBookingsLength = safeBookings.length;
+  const safeBookingsLength = booked;
   // slot.startTime / endTime mapping fallback request
   const displayTime = slot.time || (slot.startTime ? `${slot.startTime} - ${slot.endTime || '?'}` : '???');
 
@@ -52,14 +56,20 @@ export function SlotCard({
   
   const isCritical = slot.isCritical === true;
 
-  const free = Math.max(0, safeCapacity - safeBookingsLength);
+  console.log("CAPACITY DEBUG:", {
+    id: slot.id,
+    capacity: slot.capacity,
+    bookings: slot.bookings?.length,
+    free: slot.capacity - (slot.bookings?.length || 0)
+  });
+
   let capacityText = "";
-  if (free === 0) {
-    capacityText = "Ausgebucht";
+  if (free <= 0) {
+    capacityText = `Ausgebucht (${booked}/${capacity})`;
   } else if (free === 1) {
-    capacityText = "Noch 1 Platz frei";
+    capacityText = `Noch 1 Platz frei (${booked}/${capacity})`;
   } else {
-    capacityText = `Noch ${free} Plätze frei`;
+    capacityText = `Noch ${free} Plätze frei (${booked}/${capacity})`;
   }
 
   const now = new Date();
